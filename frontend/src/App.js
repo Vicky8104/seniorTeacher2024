@@ -1,41 +1,50 @@
-
-import React, { useState, useEffect } from "react"; 
-// import { Routes, Route } from "react-router-dom";
-// import ProtectedRoute from "./ProtectedRoute";
+import React, { useState, useEffect, useMemo } from "react";
 import Layout from "./layout/Layout";
 import Dashboard from "./Dashboard";
 import API from "./config";
-import { useMemo } from "react";
 
 function App() {
   const [form, setForm] = useState({
     post: "",
     subject: "",
     rollno: "",
+    mobile: "",
     email: "",
+    dob: ""
   });
 
-  const [otp, setOtp] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [isFormActive, setIsFormActive] = useState(false);
   const [timeMessage, setTimeMessage] = useState("");
+  
 
-  // ✅ Start & End Date
-  // const startDate = new Date(process.env.REACT_APP_FORM_START);
-  // const endDate = new Date(process.env.REACT_APP_FORM_END);
-  const startDate = useMemo(
-  () => new Date(process.env.REACT_APP_FORM_START),
-  []
-  );
-  const endDate = useMemo(
-  () => new Date(process.env.REACT_APP_FORM_END),
-  []
-  );
+  // ✅ Date safe
+  const startDate = useMemo(() => {
+    return process.env.REACT_APP_FORM_START
+      ? new Date(process.env.REACT_APP_FORM_START)
+      : new Date("2000-01-01");
+  }, []);
 
-  // ✅ Check form timing
+  const endDate = useMemo(() => {
+    return process.env.REACT_APP_FORM_END
+      ? new Date(process.env.REACT_APP_FORM_END)
+      : new Date("2100-01-01");
+  }, []);
+
+  const subjectOptions = {
+    "Teacher Level-1": ["Sanskrit", "General"],
+    "Teacher Level-2": [
+      "Sanskrit",
+      "English",
+      "Hindi",
+      "Science-Maths",
+      "Social Science"
+    ]
+  };
+
+  // ✅ Time check
   useEffect(() => {
     const checkTime = () => {
       const now = new Date();
@@ -52,103 +61,97 @@ function App() {
       }
     };
 
-    checkTime(); // page load
-    const interval = setInterval(checkTime, 1000); // realtime update
-
+    checkTime();
+    const interval = setInterval(checkTime, 1000);
     return () => clearInterval(interval);
   }, [startDate, endDate]);
 
-  // ✅ Check token & auto login
+  // ✅ Auto login (FIXED)
   useEffect(() => {
     const token = localStorage.getItem("token");
 
     if (token) {
-      fetch(`${API}user`, {
-        headers: { Authorization: `Bearer ${token}` },
+      fetch(`${API}/user`, {
+        headers: { Authorization: `Bearer ${token}` }
       })
         .then(res => {
-          if (res.status === 401) {
+          if (!res.ok) {
             localStorage.removeItem("token");
             setUser(null);
             return null;
           }
           return res.json();
         })
-        .then(data => {
-          if (data?.user) setUser(data.user);
-          else setUser(data);
-        })
+       .then(data => {
+  if (data) {
+    setUser(data.user || data);   // 🔥 दोनों case handle करेगा
+  }
+})
         .catch(() => {
           localStorage.removeItem("token");
         });
     }
   }, []);
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
 
-    if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split(".")[1]));
-        if (payload.exp * 1000 < Date.now()) {
-          localStorage.removeItem("token");
-          setUser(null);
-        }
-      } catch {
-        localStorage.removeItem("token");
-      }
-    }
-  }, []);
-
-  // ✅ Reset form when user logs out
-  useEffect(() => {
-    if (!user) {
-      setForm({ post: "", subject: "", rollno: "", email: "" });
-      setOtp("");
-      setOtpSent(false);
-      setError("");
-    }
-  }, [user]);
-
-  const subjectOptions = {
-    "Teacher Level-1": ["Sanskrit", "General"],
-    "Teacher Level-2": ["Sanskrit", "Hindi", "English", "Science-Maths", "Social Science"],
-  };
-
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
+  // ✅ Input handler
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    if (name === "post") {
+      setForm({ ...form, post: value, subject: "" });
+      return;
+    }
+
     if (name === "rollno") {
       setForm({ ...form, rollno: value.replace(/\D/g, "").slice(0, 6) });
       return;
     }
-    if (name === "email") {
-      setForm({ ...form, email: value.toLowerCase().trim() });
+
+    if (name === "mobile") {
+      setForm({ ...form, mobile: value.replace(/\D/g, "").slice(0, 10) });
       return;
     }
+
+    if (name === "dob") {
+      const [year, month, day] = value.split("-");
+      const formattedDOB = `${day}-${month}-${year}`;
+      setForm({ ...form, dob: formattedDOB });
+      return;
+    }
+
     setForm({ ...form, [name]: value });
   };
 
-  // ✅ SEND OTP with timing check
-  const sendOtp = async () => {
+
+useEffect(() => {
+  if (!user) {
+    setForm({
+      post: "",
+      subject: "",
+      rollno: "",
+      mobile: "",
+      email: "",
+      dob: ""
+    });
+  }
+}, [user]);
+
+
+
+  // ✅ LOGIN (FINAL FIXED)
+  const handleLogin = async () => {
+    console.log("API:", API);
+
     if (!isFormActive) {
-      setError(timeMessage || "Form is not active");
+      setError(timeMessage);
       return;
     }
 
-    if (!form.post || !form.subject || !form.rollno || !form.email) {
-      setError("Please fill all fields");
-      return;
-    }
+    const { post, subject, rollno, mobile, email, dob } = form;
 
-    if (form.rollno.length !== 6) {
-      setError("Roll No must be exactly 6 digits");
-      return;
-    }
-
-    if (!emailRegex.test(form.email)) {
-      setError("Please enter a valid email address");
+    if (!post || !subject || !rollno || !mobile || !email || !dob) {
+      setError("All fields required");
       return;
     }
 
@@ -156,77 +159,61 @@ function App() {
     setError("");
 
     try {
-      const res = await fetch(`${API}/send-otp`, {
+      const res = await fetch(`${API}/login`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(form)
       });
 
       const data = await res.json();
-      if (res.status === 200) setOtpSent(true);
-      else setError(data.message);
-    } catch {
-      setError("Server error");
-    }
+      console.log("LOGIN RESPONSE:", data);
 
-    setLoading(false);
+      if (!res.ok) {
+        setError(data.message || "Login failed");
+        return;
+      }
+      console.log("LOGIN USER:", data.user);
+      // ✅ SUCCESS
+      localStorage.setItem("token", data.token);
+      setUser(data.user);
+
+    } catch (err) {
+      console.log(err);
+      setError("Server error");
+    } finally {
+      setLoading(false); // 🔥 FIX
+    }
   };
 
-  const verifyOtp = async () => {
-    setLoading(true);
-    setError("");
-
-    try {
-      const res = await fetch(`${API}/verify-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          post: form.post,
-          subject: form.subject,
-          rollno: form.rollno,
-          email: form.email,
-          otp,
-        }),
-      });
-
-      const data = await res.json();
-      if (res.status === 200) {
-        setUser(data.user);
-        localStorage.setItem("token", data.token);
-      } else setError(data.message);
-    } catch {
-      setError("Server error");
-    }
-
-    setLoading(false);
-  };
-
-  if (loading) return <h2 style={{ textAlign: "center" }}>{loading ? "Processing..." : ""}</h2>;
-
-  if (user && localStorage.getItem("token"))
+  // ✅ Logged in
+  if (user) {
     return (
-      <Layout user={user} setUser={setUser} setOtpSent={setOtpSent} setOtp={setOtp}>
-        <Dashboard user={user} setUser={setUser} setOtpSent={setOtpSent} setOtp={setOtp} />
+      <Layout user={user} setUser={setUser}>
+        <Dashboard user={user} setUser={setUser} />
       </Layout>
     );
+  }
 
+  // ✅ UI
   return (
     <Layout>
-      <div className="login-card" style={{ maxWidth: 400, margin: "50px auto", textAlign: "center" }}>
-        {/* ✅ FORM TIMING MESSAGE */}
+      <div className="login-container">
+
         {!isFormActive ? (
           <h2 style={{ color: "red" }}>{timeMessage}</h2>
-        ) : !otpSent ? (
-          <>
+        ) : (
+          <div className="login-card">
+
             <h2>Login</h2>
-            {error && <p style={{ color: "red" }}>{error}</p>}
+            {error && <p className="error">{error}</p>}
 
             <select name="post" value={form.post} onChange={handleChange}>
               <option value="">Select Post</option>
               <option value="Teacher Level-1">Teacher Level-1</option>
               <option value="Teacher Level-2">Teacher Level-2</option>
             </select>
-            <br /><br />
 
             <select
               name="subject"
@@ -235,54 +222,23 @@ function App() {
               disabled={!form.post}
             >
               <option value="">Select Subject</option>
-              {form.post && subjectOptions[form.post].map((sub) => (
-                <option key={sub} value={sub}>{sub}</option>
-              ))}
+              {form.post &&
+                subjectOptions[form.post].map((sub) => (
+                  <option key={sub} value={sub}>{sub}</option>
+                ))}
             </select>
-            <br /><br />
 
-            <input
-              name="rollno"
-              placeholder="Roll No (6 digits)"
-              value={form.rollno}
-              onChange={handleChange}
-              inputMode="numeric"
-              maxLength={6}
-              autoComplete="off"
-            />
-            <br /><br />
+            <input name="rollno" placeholder="Roll No" onChange={handleChange} />
+            <input type="date" name="dob" onChange={handleChange} />
+            <input name="mobile" placeholder="Mobile" onChange={handleChange} />
+            <input name="email" placeholder="Email" onChange={handleChange} />
 
-            <input
-              name="email"
-              placeholder="Email"
-              value={form.email}
-              onChange={handleChange}
-              type="email"
-              autoComplete="off"
-            />
-            <br /><br />
-
-            <button onClick={sendOtp} disabled={loading}>
-              {loading ? "Sending..." : "Send OTP"}
+            {/* 🔥 IMPORTANT FIX */}
+            <button type="button" onClick={handleLogin}>
+              {loading ? "Logging in..." : "Login"}
             </button>
-          </>
-        ) : (
-          <>
-            <h2>Enter OTP</h2>
-            {error && <p style={{ color: "red" }}>{error}</p>}
 
-            <input
-              value={otp}
-              onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-              placeholder="OTP"
-              autoComplete="off"
-            />
-            <br /><br />
-
-            <button onClick={verifyOtp} disabled={loading}>
-              {loading ? "Verifying..." : "Verify OTP"}
-            </button>
-          </>
+          </div>
         )}
       </div>
     </Layout>

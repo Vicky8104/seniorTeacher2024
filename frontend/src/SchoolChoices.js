@@ -93,10 +93,7 @@ export default function SchoolChoices({ schools = [], selectedSchools = [], onSu
                   <option
                     key={s._id}
                     value={s.code}
-                    // disabled={
-                    //   choices.includes(s.code) &&
-                    //   choices[index] !== s.code
-                    // }
+                   
                     disabled={isSelectedElsewhere(s.code, index)}
                   >
                     {s.name}

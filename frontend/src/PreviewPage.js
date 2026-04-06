@@ -85,22 +85,6 @@ export default function PreviewPage({
 
       </div>
 
-                {/* ⏰ Form Timing Info */}
-    {/* {formStatus && (
-      <div style={{ marginBottom: "10px" }}>
-        <p>Start: {new Date(formStatus.start).toLocaleString()}</p>
-        <p>End: {new Date(formStatus.end).toLocaleString()}</p>
-      </div>
-    )}
-    
-    {/* ❌ Closed message */}
-    {/* {formStatus && !formStatus.isOpen && (
-      <p style={{ color: "red", marginBottom: "10px" }}>
-        Form is not available at this time
-      </p>
-    )}  */}
-
-
 
       {/* BUTTONS */}
 

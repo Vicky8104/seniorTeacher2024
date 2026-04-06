@@ -2,19 +2,16 @@
 import "./Navbar.css";
 import { useNavigate } from "react-router-dom";
 
-const Navbar = ({ user, setUser, setOtpSent, setOtp }) => {
+const Navbar = ({ user, setUser }) => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
     localStorage.removeItem("token");
 
     setUser(null);
-    setOtp("");
-    setOtpSent(false);
-
+      
     navigate("/", { replace: true }); // 🔐 back block
   };
-
 
   return (
   <div className="navbar">

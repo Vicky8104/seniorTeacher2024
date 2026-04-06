@@ -1,29 +1,44 @@
 const express = require("express");
-
 const router = express.Router();
+const { verifyToken } = require("../middleware/verifyToken");
+const jwt = require("jsonwebtoken");
+const User = require("../models/User");
+
 
 const {
-  sendOtp,
-  verifyOtp,
+  loginUser,
   getUser,
   getSchools,
   submitSchools,
-
   submitFinalForm
-
 } = require("../controllers/authController");
 
-const { verifyToken } = require("../middleware/verifyToken");
+// LOGIN
+router.post("/login", loginUser);
 
-router.post("/send-otp", sendOtp);
-router.post("/verify-otp", verifyOtp);
+router.get("/user", async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-router.get("/user", verifyToken, getUser);
+    const user = await User.findById(decoded.id);
+    res.json({ user });  // 🔥 IMPORTANT
 
+  } catch (err) {
+    res.status(401).json({ message: "Unauthorized" });
+  }
+});
+
+
+// GET SCHOOLS
 router.get("/schools", verifyToken, getSchools);
 
-router.post("/submit-schools", verifyToken, submitSchools);
+// SAVE SCHOOLS
+router.post("/schools", submitSchools);
 
-router.post("/submit-form", verifyToken, submitFinalForm);
+// FINAL SUBMIT
+
+router.post("/submit", verifyToken, submitFinalForm);
 
 module.exports = router;
+

@@ -21,7 +21,7 @@ const members = [
   },
 ];
 
-export default function Header({ user, setUser, setOtpSent, setOtp }) {
+export default function Header({ user, setUser }) {
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
@@ -53,8 +53,7 @@ export default function Header({ user, setUser, setOtpSent, setOtp }) {
         <Navbar
           user={user}
           setUser={setUser}
-          setOtpSent={setOtpSent}
-          setOtp={setOtp}
+          
         />
       </div>
 

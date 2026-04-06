@@ -21,9 +21,6 @@ const userSchema = new mongoose.Schema({
   mobile: String,
   email: String,
 
-  otp: String,
-  otpExpiry: Date,
-
   schoolChoices: [String],
   failedAttempts: {
   type: Number,

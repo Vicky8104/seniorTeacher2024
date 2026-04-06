@@ -6,9 +6,10 @@ import "./Dashboard.css";
 import API, { BASE_URL } from "./config";
 import { useNavigate } from "react-router-dom";
 
-export default function Dashboard({ user, setUser, setOtpSent, setOtp }) {
+export default function Dashboard({ user, setUser }) {
 
-  // const [formStatus, setFormStatus] = useState(null);
+  console.log("DASHBOARD USER:", user);
+
   const navigate = useNavigate();
 
   const [cards, setCards] = useState([
@@ -17,32 +18,14 @@ export default function Dashboard({ user, setUser, setOtpSent, setOtp }) {
     { id: 3, title: "Download Form", unlocked: false },
   ]);
 
+  // ✅ FIX: always start from personal
   const [activeForm, setActiveForm] = useState("personal");
   const [schools, setSchools] = useState([]);
   const [personalData, setPersonalData] = useState(null);
   const [schoolData, setSchoolData] = useState([]);
   const [pdfUrl, setPdfUrl] = useState("");
-  const [userState, setUserState] = useState(user);
 
-  useEffect(() => {
-//   const fetchFormStatus = async () => {
-//     try {
-//       const res = await fetch(`${BASE_URL}/api/form-status`);
-//       const data = await res.json();
-//       setFormStatus(data);
-//     } catch (err) {
-//       console.error(err);
-//     }
-//   };
-
-//   fetchFormStatus();
-//  }, [setFormStatus]);
-
-//   useEffect(() => {
-  setUserState(user);
-  }, [user]);
-
-  // 🔐 DIRECT ACCESS BLOCK (VERY IMPORTANT)
+  // 🔐 DIRECT ACCESS BLOCK
   useEffect(() => {
     const token = localStorage.getItem("token");
 
@@ -52,34 +35,36 @@ export default function Dashboard({ user, setUser, setOtpSent, setOtp }) {
     }
   }, [navigate, setUser]);
 
-  // 🔐 FORM SUBMITTED LOCK
+  // 🔐 FORM SUBMITTED LOCK (SAFE CHECK)
   useEffect(() => {
-    if (userState?.formSubmitted) {
+    if (user && user.formSubmitted === true) {   // ✅ FIX HERE
+
       setCards([
         { id: 1, title: "Personal Details", unlocked: false },
         { id: 2, title: "School Choices", unlocked: false },
         { id: 3, title: "Download Form", unlocked: true },
       ]);
 
-      // setPdfUrl(`http://localhost:5000${userState.pdfUrl}`);
       setPdfUrl(
-      userState.pdfUrl?.startsWith("http")
-        ? userState.pdfUrl
-        : `${BASE_URL}${userState.pdfUrl}`
+        user.pdfUrl?.startsWith("http")
+          ? user.pdfUrl
+          : `${BASE_URL}${user.pdfUrl}`
       );
-      setActiveForm(null);
+
+      setActiveForm(null); // only when truly submitted
+    } else {
+      // ✅ FIX: ensure form opens after login
+      setActiveForm("personal");
     }
-  }, [userState]);
+  }, [user]);
 
-  // 🔐 FETCH SCHOOLS (SECURE)
+  // 🔐 FETCH SCHOOLS
   useEffect(() => {
-    if(!user) return;
-    const fetchSchools = async () => {
-      
+    if (!user?.post || !user?.subject) return;
 
+    const fetchSchools = async () => {
       const token = localStorage.getItem("token");
 
-      // 🔥 SECURITY CHECK
       if (!token) {
         setUser(null);
         navigate("/", { replace: true });
@@ -96,13 +81,13 @@ export default function Dashboard({ user, setUser, setOtpSent, setOtp }) {
           }
         );
 
-          if (res.status === 401) {
+        if (res.status === 401) {
           localStorage.removeItem("token");
           setUser(null);
-          // setUserState(null);
           navigate("/", { replace: true });
           return;
-          }
+        }
+
         const data = await res.json();
         setSchools(data.schools || []);
       } catch (err) {
@@ -126,19 +111,17 @@ export default function Dashboard({ user, setUser, setOtpSent, setOtp }) {
     }
   };
 
-  // 🔐 FINAL SUBMIT (SECURE)
+  // 🔐 FINAL SUBMIT
   const handleFinalSubmit = async () => {
-
     const token = localStorage.getItem("token");
 
-    // 🔥 SECURITY CHECK
     if (!token) {
       setUser(null);
       navigate("/", { replace: true });
       return;
     }
 
-    if (userState.formSubmitted) {
+    if (user?.formSubmitted === true) {  // ✅ FIX
       alert("Form already submitted");
       return;
     }
@@ -147,9 +130,9 @@ export default function Dashboard({ user, setUser, setOtpSent, setOtp }) {
       const school = schools.find(s => s.code === code);
       return school ? school.name : code;
     });
- 
+
     try {
-      const res = await fetch(`${API}/submit-form`, {
+      const res = await fetch(`${API}/submit`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -161,31 +144,26 @@ export default function Dashboard({ user, setUser, setOtpSent, setOtp }) {
           schoolNames
         }),
       });
-        if (res.status === 401) {
-          localStorage.removeItem("token");
-          setUser(null);
-          // setUserState(null);
-          navigate("/", { replace: true });
-          return;
-        }
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text);
+      }
+
       const data = await res.json();
 
-      setUserState({
-        ...userState,
+      // ✅ USER UPDATE
+      setUser(prev => ({
+        ...prev,
         formSubmitted: true,
         pdfUrl: data.pdfUrl
-      });
-      setUser((prev) => ({
-      ...prev,
-      formSubmitted: true,
       }));
 
-      // setPdfUrl(`http://localhost:5000${data.pdfUrl}`);
-    setPdfUrl(
-    data.pdfUrl.startsWith("http")
-    ? data.pdfUrl
-    : `${BASE_URL}${data.pdfUrl}`
-    );
+      setPdfUrl(
+        data.pdfUrl?.startsWith("http")
+          ? data.pdfUrl
+          : `${BASE_URL}${data.pdfUrl}`
+      );
 
       setCards([
         { id: 1, title: "Personal Details", unlocked: false },
@@ -199,22 +177,23 @@ export default function Dashboard({ user, setUser, setOtpSent, setOtp }) {
 
     } catch (err) {
       console.error(err);
-      alert("Something went wrong");
+      alert(err.message || "Something went wrong");
     }
   };
+
+  // 🔥 SAFETY
+  if (!user?.post || !user?.subject) {
+    return <h2>Loading...</h2>;
+  }
 
   return (
     <div className="dashboard-container">
 
-      {user && (
-      <>
       <h1>
-      {user.post} {user.subject} Counseling Portal
+        {user.post} {user.subject} Counseling Portal
       </h1>
 
-        <h2>Welcome, {user.name}</h2>
-      </>
-      )}
+      <h2>Welcome, {user.name}</h2>
 
       <div className="dashboard-cards">
         {cards.map((card) => (
@@ -228,31 +207,29 @@ export default function Dashboard({ user, setUser, setOtpSent, setOtp }) {
         ))}
       </div>
 
-      {userState?.formSubmitted && (
+      {user?.formSubmitted === true && (
         <div style={{ marginTop: "20px", textAlign: "center" }}>
           <h3>✅ Form Submitted</h3>
-          <button style={{maxWidth:"150px"}} onClick={() => window.open(pdfUrl, "_blank")}>
+          <button onClick={() => window.open(pdfUrl, "_blank")}>
             Download PDF
           </button>
         </div>
       )}
 
-      {!userState?.formSubmitted && activeForm === "personal" && (
+      {!user?.formSubmitted && activeForm === "personal" && (
         <PersonalDetails
           user={user}
           onSubmit={(formData) => {
             setPersonalData(formData);
-            setCards(
-              cards.map((c) =>
-                c.id === 2 ? { ...c, unlocked: true } : c
-              )
-            );
+            setCards(cards.map(c =>
+              c.id === 2 ? { ...c, unlocked: true } : c
+            ));
             setActiveForm("school");
           }}
         />
       )}
 
-      {!userState?.formSubmitted && activeForm === "school" && (
+      {!user?.formSubmitted && activeForm === "school" && (
         <SchoolChoices
           user={user}
           schools={schools}
@@ -264,15 +241,14 @@ export default function Dashboard({ user, setUser, setOtpSent, setOtp }) {
         />
       )}
 
-      {!userState?.formSubmitted && activeForm === "preview" && (
+      {!user?.formSubmitted && activeForm === "preview" && (
         <PreviewPage
-          user={userState}
+          user={user}
           personalData={personalData}
           schoolData={schoolData}
           schools={schools}
           onEdit={() => setActiveForm("personal")}
           onFinalSubmit={handleFinalSubmit}
-          
         />
       )}
 
