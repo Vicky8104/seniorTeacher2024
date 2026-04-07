@@ -41,6 +41,14 @@ function App() {
       "Hindi",
       "Science-Maths",
       "Social Science"
+    ],
+    "Senior Teacher 2024": [
+      "Sanskrit",
+      "English",
+      "Hindi",
+      "Science",
+      "Mathematics",
+      "Social Science"
     ]
   };
 
@@ -211,8 +219,9 @@ useEffect(() => {
 
             <select name="post" value={form.post} onChange={handleChange}>
               <option value="">Select Post</option>
-              <option value="Teacher Level-1">Teacher Level-1</option>
-              <option value="Teacher Level-2">Teacher Level-2</option>
+              <option value= "Senior Teacher 2024">Senior Teacher 2024</option>
+              {/* <option value="Teacher Level-1">Teacher Level-1</option>
+              <option value="Teacher Level-2">Teacher Level-2</option> */}
             </select>
 
             <select

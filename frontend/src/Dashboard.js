@@ -105,10 +105,17 @@ export default function Dashboard({ user, setUser }) {
     if (cardId === 1) setActiveForm("personal");
     if (cardId === 2) setActiveForm("school");
 
+    // if (cardId === 3) {
+    //   if (pdfUrl) window.open(pdfUrl, "_blank");
+    //   else alert("Form not submitted yet");
+    // }
     if (cardId === 3) {
-      if (pdfUrl) window.open(pdfUrl, "_blank");
-      else alert("Form not submitted yet");
-    }
+  if (pdfUrl) {
+    window.open(pdfUrl, "_blank");
+  } else {
+    alert("PDF is not ready yet, please wait a moment.");
+  }
+}
   };
 
   // 🔐 FINAL SUBMIT
@@ -159,11 +166,18 @@ export default function Dashboard({ user, setUser }) {
         pdfUrl: data.pdfUrl
       }));
 
+      // setPdfUrl(
+      //   data.pdfUrl?.startsWith("http")
+      //     ? data.pdfUrl
+      //     : `${BASE_URL}${data.pdfUrl}`
+      // );
       setPdfUrl(
-        data.pdfUrl?.startsWith("http")
-          ? data.pdfUrl
-          : `${BASE_URL}${data.pdfUrl}`
-      );
+  data.pdfUrl
+    ? data.pdfUrl.startsWith("http")
+      ? data.pdfUrl
+      : `${BASE_URL}${data.pdfUrl}`
+    : "" // agar pdfUrl undefined hai to empty string
+);
 
       setCards([
         { id: 1, title: "Personal Details", unlocked: false },

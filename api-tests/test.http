@@ -1,0 +1,44 @@
+### ================= LOGIN =================
+POST http://localhost:5000/api/login
+Content-Type: application/json
+
+{
+  "post": "Senior Teacher",
+  "subject": "Sanskrit",
+  "rollno": "101234",
+  "dob": "25-02-1984",
+  "mobile": "8104000905",
+  "email": "vkumarjangid7543@gmail.com"
+}
+
+### Copy token from login response and replace {{token}} in the following requests
+
+### ================= GET USER =================
+GET http://localhost:5000/api/user
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5ZDM5OWQ0NmNkMmMxMmQ1N2MzYmM5ZSIsImVtYWlsIjoidmt1bWFyamFuZ2lkNzU0M0BnbWFpbC5jb20iLCJwb3N0IjoiU2VuaW9yIFRlYWNoZXIiLCJzdWJqZWN0IjoiU2Fuc2tyaXQiLCJpYXQiOjE3NzU1Mzg3OTMsImV4cCI6MTc3NTU0MjM5M30.pOAZWzIN4RQnQ7cyAXw2ydAFHoYraCWQPlBEGGTyWoM
+
+### ================= GET SCHOOLS =================
+GET http://localhost:5000/api/schools?post=Senior Teacher&subject=Sanskrit
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5ZDM5OWQ0NmNkMmMxMmQ1N2MzYmM5ZSIsImVtYWlsIjoidmt1bWFyamFuZ2lkNzU0M0BnbWFpbC5jb20iLCJwb3N0IjoiU2VuaW9yIFRlYWNoZXIiLCJzdWJqZWN0IjoiU2Fuc2tyaXQiLCJpYXQiOjE3NzU1Mzg3OTMsImV4cCI6MTc3NTU0MjM5M30.pOAZWzIN4RQnQ7cyAXw2ydAFHoYraCWQPlBEGGTyWoM
+
+### ================= SUBMIT SCHOOLS =================
+POST http://localhost:5000/api/schools
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5ZDM5OWQ0NmNkMmMxMmQ1N2MzYmM5ZSIsImVtYWlsIjoidmt1bWFyamFuZ2lkNzU0M0BnbWFpbC5jb20iLCJwb3N0IjoiU2VuaW9yIFRlYWNoZXIiLCJzdWJqZWN0IjoiU2Fuc2tyaXQiLCJpYXQiOjE3NzU1Mzg3OTMsImV4cCI6MTc3NTU0MjM5M30.pOAZWzIN4RQnQ7cyAXw2ydAFHoYraCWQPlBEGGTyWoM
+
+{
+  "selectedSchools": ["Government School Jaipur"]
+}
+
+### ================= FINAL SUBMIT =================
+POST http://localhost:5000/api/submit
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5ZDM5OWQ0NmNkMmMxMmQ1N2MzYmM5ZSIsImVtYWlsIjoidmt1bWFyamFuZ2lkNzU0M0BnbWFpbC5jb20iLCJwb3N0IjoiU2VuaW9yIFRlYWNoZXIiLCJzdWJqZWN0IjoiU2Fuc2tyaXQiLCJpYXQiOjE3NzU1Mzg3OTMsImV4cCI6MTc3NTU0MjM5M30.pOAZWzIN4RQnQ7cyAXw2ydAFHoYraCWQPlBEGGTyWoM
+
+{
+  "personalData": {
+    "maritalStatus": "MARRIED",
+    "homeDistrict": "TONK",
+    "otherCategory": "vishnujangid"
+  }
+}

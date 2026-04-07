@@ -34,7 +34,7 @@ router.get("/user", async (req, res) => {
 router.get("/schools", verifyToken, getSchools);
 
 // SAVE SCHOOLS
-router.post("/schools", submitSchools);
+router.post("/schools",verifyToken, submitSchools);
 
 // FINAL SUBMIT
 
